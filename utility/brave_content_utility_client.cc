@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "brave/components/brave_shields/core/services/filter_set/filter_set_service.h"
 #include "brave/components/brave_wallet/common/buildflags/buildflags.h"
 #include "brave/components/services/bat_ads/bat_ads_service_impl.h"
 #include "brave/components/services/bat_ads/public/interfaces/bat_ads.mojom.h"
@@ -66,6 +67,12 @@ auto RunBraveWalletUtilsService(
 }
 #endif
 
+auto RunFilterSetService(
+    mojo::PendingReceiver<filter_set::mojom::UtilParseFilterSet> receiver) {
+  return std::make_unique<filter_set_service::FilterSetService>(
+      std::move(receiver));
+}
+
 }  // namespace
 
 BraveContentUtilityClient::BraveContentUtilityClient() = default;
@@ -88,6 +95,8 @@ void BraveContentUtilityClient::RegisterMainThreadServices(
 #if BUILDFLAG(ENABLE_BRAVE_WALLET)
   services.Add(RunBraveWalletUtilsService);
 #endif
+
+  services.Add(RunFilterSetService);
 
   return ChromeContentUtilityClient::RegisterMainThreadServices(services);
 }

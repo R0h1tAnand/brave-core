@@ -43,6 +43,7 @@ static_library("browser") {
     "//brave/components/brave_component_updater/browser",
     "//brave/components/brave_shields/core/common",
     "//brave/components/brave_shields/core/common:mojom",
+    "//brave/components/brave_shields/core/services/filter_set/mojom",
     "//brave/components/constants",
     "//brave/components/content_settings/core/common",
     "//brave/components/https_upgrade_exceptions/browser",
