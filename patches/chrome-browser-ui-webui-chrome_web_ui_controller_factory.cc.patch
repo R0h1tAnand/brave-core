@@ -2,8 +2,16 @@ diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrom
 index 96f13925113dca4fef4f611f6efac0cb57372e4d..dc02215afd4a7e6cf976079f698c244986ba9bed 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -340,6 +340,7 @@ void ChromeWebUIControllerFactory::GetFaviconForURL(
- 
+@@ -322,6 +322,7 @@ void ChromeWebUIControllerFactory::GetFaviconForURL(
+         resource_scale_factors[selected_index];
+
+     scoped_refptr<base::RefCountedMemory> bitmap(
++        BRAVE_CHROME_WEBUI_CONTROLLER_FACTORY_GET_FAVICON_FOR_URL
+         GetFaviconResourceBytes(url, selected_resource_scale));
+     if (bitmap.get() && bitmap->size()) {
+       favicon_base::FaviconRawBitmapResult bitmap_result;
+@@ -340,6 +341,7 @@ void ChromeWebUIControllerFactory::GetFaviconForURL(
+
  // static
  ChromeWebUIControllerFactory* ChromeWebUIControllerFactory::GetInstance() {
 +  BRAVE_CHROME_WEBUI_CONTROLLER_FACTORY
