@@ -17,8 +17,8 @@ namespace brave_wallet {
 // Polkadot transaction metadata class
 class PolkadotTxMeta : public TxMeta {
  public:
+  PolkadotTxMeta();
   PolkadotTxMeta(const mojom::AccountIdPtr& from,
-                 const PolkadotChainMetadata& chain_metadata,
                  const PolkadotUnsignedTransfer& extrinsic);
   ~PolkadotTxMeta() override;
 
@@ -30,10 +30,13 @@ class PolkadotTxMeta : public TxMeta {
   mojom::TransactionInfoPtr ToTransactionInfo() const override;
   mojom::CoinType GetCoinType() const override;
 
+  static bool ValueToTxMeta(const base::Value::Dict& value,
+                            PolkadotTxMeta* tx_meta);
+
  private:
   std::string recipient_;
-  std::string encoded_extrinsic_;
   base::StrictNumeric<uint128_t> amount_ = uint128_t{0};
+  bool transfer_all_ = false;
 };
 
 }  // namespace brave_wallet

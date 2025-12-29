@@ -218,8 +218,11 @@ TEST_F(PolkadotTxManagerUnitTest, AddUnapprovedPolkadotTransaction) {
               EXPECT_TRUE(tx);
 
               EXPECT_EQ(
-                  *tx->GetDict().FindString("extrinsic"),
-                  R"(98040500008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a484913)");
+                  *tx->GetDict().FindString("recipient"),
+                  R"(8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48)");
+              EXPECT_EQ(*tx->GetDict().FindString("amount"),
+                        "d2040000000000000000000000000000");
+              EXPECT_EQ(*tx->GetDict().FindBool("transfer_all"), false);
 
               quit_closure.Run();
             },
@@ -252,8 +255,11 @@ TEST_F(PolkadotTxManagerUnitTest, AddUnapprovedPolkadotTransaction) {
               EXPECT_TRUE(tx);
 
               EXPECT_EQ(
-                  *tx->GetDict().FindString("extrinsic"),
-                  R"(d4040500008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4833ffffffffffffffffffffffffffffffff)");
+                  *tx->GetDict().FindString("recipient"),
+                  R"(8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48)");
+              EXPECT_EQ(*tx->GetDict().FindString("amount"),
+                        "ffffffffffffffffffffffffffffffff");
+              EXPECT_EQ(*tx->GetDict().FindBool("transfer_all"), false);
 
               quit_closure.Run();
             },

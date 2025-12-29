@@ -98,7 +98,7 @@ void PolkadotTxManager::OnGetChainMetadataForUnapproved(
   std::optional<url::Origin> origin = std::nullopt;
 
   PolkadotTxMeta tx_metadata(
-      params->from, chain_metadata.value(),
+      params->from,
       PolkadotUnsignedTransfer(*recipient, MojomToUint128(params->amount)));
 
   tx_metadata.set_id(TxMeta::GenerateMetaID());

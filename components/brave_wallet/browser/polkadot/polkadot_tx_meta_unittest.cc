@@ -27,9 +27,6 @@ TEST(PolkadotTxMeta, ToValue) {
       mojom::CoinType::DOT, mojom::KeyringId::kPolkadotTestnet,
       mojom::AccountKind::kDerived, 0);
 
-  auto testnet_metadata =
-      PolkadotChainMetadata::FromChainName(kWestendChainType).value();
-
   std::array<uint8_t, kPolkadotSubstrateAccountIdSize> pubkey = {};
   base::HexStringToSpan(kBob, pubkey);
 
@@ -37,8 +34,7 @@ TEST(PolkadotTxMeta, ToValue) {
 
   PolkadotUnsignedTransfer transfer_extrinsic(pubkey, send_amount);
 
-  PolkadotTxMeta meta(polkadot_account_id, testnet_metadata,
-                      transfer_extrinsic);
+  PolkadotTxMeta meta(polkadot_account_id, transfer_extrinsic);
 
   meta.set_chain_id(mojom::kPolkadotTestnet);
   base::Time::Exploded x{1981, 3, 0, 1, 2};
@@ -53,12 +49,14 @@ TEST(PolkadotTxMeta, ToValue) {
       "coin": 354,
       "confirmed_time": "0",
       "created_time": "11996733540000000",
-      "extrinsic": "98040400008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a484913",
       "from_account_id": "354_15_0_0",
       "id": "",
       "status": 0,
       "submitted_time": "11996733597000000",
-      "tx_hash": ""
+      "tx_hash": "",
+      "recipient": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+      "amount": "d2040000000000000000000000000000",
+      "transfer_all": false
     })";
 
   EXPECT_EQ(meta.ToValue(), base::test::ParseJsonDict(expected_value));
@@ -79,8 +77,7 @@ TEST(PolkadotTxMeta, ToTransactionPtr) {
 
   PolkadotUnsignedTransfer transfer_extrinsic(pubkey, send_amount);
 
-  PolkadotTxMeta meta(polkadot_account_id, testnet_metadata,
-                      transfer_extrinsic);
+  PolkadotTxMeta meta(polkadot_account_id, transfer_extrinsic);
 
   meta.set_chain_id(mojom::kPolkadotTestnet);
   base::Time::Exploded x{1981, 3, 0, 1, 2};

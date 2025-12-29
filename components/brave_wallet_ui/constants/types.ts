@@ -363,6 +363,7 @@ export type SerializableTxDataUnion = {
   btcTxData?: BraveWallet.BtcTxData
   zecTxData?: BraveWallet.ZecTxData
   cardanoTxData?: BraveWallet.CardanoTxData
+  polkadotTxData?: BraveWallet.PolkadotTxdata
 }
 
 /**
