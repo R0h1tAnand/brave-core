@@ -215,6 +215,13 @@ public class BrowserViewController: UIViewController {
 
   let downloadQueue = DownloadQueue()
 
+  /// Helper for handling VCard (.vcf) file presentation
+  private(set) lazy var vCardHelper: VCardHelper = {
+    let helper = VCardHelper()
+    helper.delegate = self
+    return helper
+  }()
+
   private var cancellables: Set<AnyCancellable> = []
 
   let rewards: BraveRewards

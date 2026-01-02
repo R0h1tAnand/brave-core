@@ -28,6 +28,14 @@ struct MIMEType {
   static let png = "image/png"
   static let webP = "image/webp"
   static let xHTML = "application/xhtml+xml"
+  static let vcard = "text/vcard"
+  static let xVcard = "text/x-vcard"
+
+  /// Returns true if the MIME type represents a VCard contact file
+  static func isVCard(_ mimeType: String?) -> Bool {
+    guard let mimeType = mimeType?.lowercased() else { return false }
+    return mimeType == vcard || mimeType == xVcard
+  }
 }
 
 extension String {
