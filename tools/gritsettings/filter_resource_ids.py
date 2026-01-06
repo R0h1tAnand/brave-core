@@ -24,7 +24,9 @@ exclusions = [
     # TODO(b/207518736): Input overlay resources will be changed
     # to proto soon, thus not going to move this resource pak to
     #  under ash.
-    'chromeos/ash/experiences/arc/input_overlay/resources/input_overlay_resources.grd'
+    'chromeos/ash/experiences/arc/input_overlay/resources/input_overlay_resources.grd',
+    # Keep glic resources; they are still built and need first IDs.
+    'chrome/browser/glic/resources/browser_resources.grd',
 ]
 
 
