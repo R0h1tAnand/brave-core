@@ -151,7 +151,7 @@ extension BrowserViewController: TabDownloadDelegate {
       Task {
         do {
           let vcardData = try Data(contentsOf: destinationURL)
-          await vCardHelper.openVCard(from: vcardData)
+          try vCardHelper.openVCard(from: vcardData)
           try await AsyncFileManager.default.removeItem(at: destinationURL)
         } catch {
           // If VCard parsing fails, show an error

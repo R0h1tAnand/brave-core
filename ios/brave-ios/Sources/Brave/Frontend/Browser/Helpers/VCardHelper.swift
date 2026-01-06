@@ -22,17 +22,19 @@ protocol VCardHelperDelegate: AnyObject {
 /// This class parses VCard data and presents it in a native iOS contact modal,
 /// matching the behavior of Safari and Chrome on iOS.
 class VCardHelper: NSObject {
+  enum VCardError: Error {
+    case parseFailed
+  }
   weak var delegate: VCardHelperDelegate?
 
   /// Opens a VCard from the provided data and presents it in a contact view controller
   /// - Parameter data: The raw VCard data (typically from a .vcf file download)
   @MainActor
-  func openVCard(from data: Data) {
-    guard let contacts = try? CNContactVCardSerialization.contacts(with: data),
-      let contact = contacts.first
-    else {
-      Logger.module.error("Failed to parse VCard data")
-      return
+  func openVCard(from data: Data) throws {
+    let contacts = try CNContactVCardSerialization.contacts(with: data)
+    // Only display the first contact for now, ignoring any additional contacts in the VCard.
+    guard let contact = contacts.first else {
+      throw VCardError.parseFailed
     }
 
     let contactViewController = CNContactViewController(forUnknownContact: contact)
