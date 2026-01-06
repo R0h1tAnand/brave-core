@@ -5,10 +5,14 @@
 
 #include "brave/components/brave_wallet/browser/polkadot/polkadot_wallet_service.h"
 
+#include "base/strings/string_number_conversions.h"
 #include "base/types/optional_ref.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
 #include "brave/components/brave_wallet/browser/keyring_service.h"
+#include "brave/components/brave_wallet/browser/polkadot/polkadot_extrinsic.rs.h"
 #include "brave/components/brave_wallet/common/common_utils.h"
+#include "components/grit/brave_components_strings.h"
+#include "ui/base/l10n/l10n_util.h"
 
 namespace brave_wallet {
 namespace {
@@ -140,6 +144,243 @@ void PolkadotWalletService::OnInitializeChainMetadata(
     }
     mainnet_chain_metadata_callbacks_.clear();
   }
+}
+
+PolkadotWalletService::PolkadotSignTransaction::PolkadotSignTransaction() =
+    default;
+PolkadotWalletService::PolkadotSignTransaction::~PolkadotSignTransaction() =
+    default;
+
+bool PolkadotWalletService::PolkadotSignTransaction::is_done() const {
+  return !account_info.is_null() && signing_header && genesis_hash &&
+         signing_block_hash && runtime_version && chain_metadata;
+}
+
+void PolkadotWalletService::UpdateSigningHeader(
+    scoped_refptr<PolkadotSignTransaction> transaction_state) {
+  if (!transaction_state->chain_header ||
+      !transaction_state->finalized_header) {
+    return;
+  }
+
+  if (transaction_state->signing_header) {
+    return;
+  }
+
+  auto current = transaction_state->chain_header->block_number;
+  auto finalized = transaction_state->finalized_header->block_number;
+
+  constexpr uint32_t kMaxFinalityLag = 5;
+  if (current - finalized > kMaxFinalityLag) {
+    transaction_state->signing_header = transaction_state->chain_header;
+  } else {
+    transaction_state->signing_header = transaction_state->finalized_header;
+  }
+
+  polkadot_substrate_rpc_.GetBlockHash(
+      transaction_state->chain_id,
+      transaction_state->signing_header->block_number,
+      base::BindOnce(&PolkadotWalletService::OnGetSigningBlockHash,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+
+  polkadot_substrate_rpc_.GetRuntimeVersion(
+      transaction_state->chain_id,
+      transaction_state->signing_header->parent_hash,
+      base::BindOnce(&PolkadotWalletService::OnGetRuntimeVersion,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+}
+
+void PolkadotWalletService::SignAndSendTransaction(
+    std::string_view chain_id,
+    const mojom::AccountIdPtr& account_id,
+    uint128_t send_amount,
+    std::string recipient,
+    ApproveTransactionCallback callback) {
+  auto pubkey = keyring_service_->GetPolkadotPubKey(account_id);
+  if (!pubkey) {
+    return std::move(callback).Run(
+        false,
+        mojom::ProviderErrorUnion::NewPolkadotProviderError(
+            mojom::PolkadotProviderError::kInternalError),
+        WalletInternalErrorMessage());
+  }
+
+  LOG(INFO) << "using polkadot account with pubkey: "
+            << base::HexEncodeLower(*pubkey);
+
+  scoped_refptr<PolkadotSignTransaction> transaction_state =
+      base::MakeRefCounted<PolkadotSignTransaction>();
+
+  transaction_state->sender_account_id = account_id->Clone();
+  transaction_state->callback = std::move(callback);
+  transaction_state->chain_id = chain_id;
+  transaction_state->send_amount = send_amount;
+
+  if (!base::HexStringToSpan(recipient, transaction_state->recipient)) {
+    // Our PolkadotTxMeta stored something incorrectly if we can't parse this.
+    return std::move(callback).Run(
+        false,
+        mojom::ProviderErrorUnion::NewPolkadotProviderError(
+            mojom::PolkadotProviderError::kInternalError),
+        WalletInternalErrorMessage());
+  }
+
+  GetChainMetadata(
+      chain_id,
+      base::BindOnce(&PolkadotWalletService::OnGetMetadataForSigning,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+
+  polkadot_substrate_rpc_.GetAccountBalance(
+      chain_id, *pubkey,
+      base::BindOnce(&PolkadotWalletService::OnGetAccount,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+
+  GetSigningHeader(transaction_state);
+
+  polkadot_substrate_rpc_.GetBlockHash(
+      chain_id, 0,
+      base::BindOnce(&PolkadotWalletService::OnGetGenesisHash,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+}
+
+void PolkadotWalletService::GetSigningHeader(
+    scoped_refptr<PolkadotSignTransaction> transaction_state) {
+  polkadot_substrate_rpc_.GetBlockHeader(
+      transaction_state->chain_id, std::nullopt,
+      base::BindOnce(&PolkadotWalletService::OnGetChainHeader,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+
+  polkadot_substrate_rpc_.GetFinalizedHead(
+      transaction_state->chain_id,
+      base::BindOnce(&PolkadotWalletService::OnGetFinalizedHead,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+}
+
+void PolkadotWalletService::OnGetMetadataForSigning(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    const base::expected<PolkadotChainMetadata, std::string>& chain_metadata) {
+  CHECK(chain_metadata.has_value());
+
+  transaction_state->chain_metadata = &chain_metadata.value();
+  OnFinalizeSignTransaction(transaction_state);
+}
+
+void PolkadotWalletService::OnGetAccount(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    mojom::PolkadotAccountInfoPtr account_info,
+    const std::optional<std::string>&) {
+  CHECK(account_info);
+  transaction_state->account_info = std::move(account_info);
+
+  OnFinalizeSignTransaction(transaction_state);
+}
+
+void PolkadotWalletService::OnGetChainHeader(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<PolkadotBlockHeader> header,
+    std::optional<std::string>) {
+  CHECK(header);
+
+  polkadot_substrate_rpc_.GetBlockHeader(
+      transaction_state->chain_id, header->parent_hash,
+      base::BindOnce(&PolkadotWalletService::OnGetParentHeader,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+}
+
+void PolkadotWalletService::OnGetParentHeader(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<PolkadotBlockHeader> header,
+    std::optional<std::string>) {
+  CHECK(header);
+
+  transaction_state->chain_header = header;
+  UpdateSigningHeader(transaction_state);
+}
+
+void PolkadotWalletService::OnGetFinalizedHead(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<std::array<uint8_t, kPolkadotBlockHashSize>> finalized_hash,
+    std::optional<std::string>) {
+  CHECK(finalized_hash);
+
+  polkadot_substrate_rpc_.GetBlockHeader(
+      transaction_state->chain_id, *finalized_hash,
+      base::BindOnce(&PolkadotWalletService::OnGetFinalizedBlockHeader,
+                     weak_ptr_factory_.GetWeakPtr(), transaction_state));
+}
+
+void PolkadotWalletService::OnGetFinalizedBlockHeader(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<PolkadotBlockHeader> header,
+    std::optional<std::string>) {
+  CHECK(header);
+  transaction_state->finalized_header = header;
+  UpdateSigningHeader(transaction_state);
+}
+
+void PolkadotWalletService::OnGetGenesisHash(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<std::array<uint8_t, kPolkadotBlockHashSize>> genesis_hash,
+    std::optional<std::string>) {
+  CHECK(genesis_hash);
+  transaction_state->genesis_hash = genesis_hash;
+  OnFinalizeSignTransaction(transaction_state);
+}
+
+void PolkadotWalletService::OnGetSigningBlockHash(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<std::array<uint8_t, kPolkadotBlockHashSize>> block_hash,
+    std::optional<std::string>) {
+  CHECK(block_hash);
+  transaction_state->signing_block_hash = block_hash;
+  OnFinalizeSignTransaction(transaction_state);
+}
+
+void PolkadotWalletService::OnGetRuntimeVersion(
+    scoped_refptr<PolkadotSignTransaction> transaction_state,
+    std::optional<PolkadotRuntimeVersion> runtime_version,
+    std::optional<std::string>) {
+  CHECK(runtime_version);
+
+  transaction_state->runtime_version = runtime_version;
+  OnFinalizeSignTransaction(transaction_state);
+}
+
+void PolkadotWalletService::OnFinalizeSignTransaction(
+    scoped_refptr<PolkadotSignTransaction> transaction_state) {
+  if (!transaction_state->is_done()) {
+    return;
+  }
+
+  LOG(INFO) << "Okay, I really, really hope I see this...";
+  LOG(INFO) << base::HexEncodeLower(*transaction_state->signing_block_hash);
+  LOG(INFO) << base::HexEncodeLower(*transaction_state->genesis_hash);
+  LOG(INFO) << transaction_state->runtime_version->spec_version;
+  LOG(INFO) << transaction_state->runtime_version->transaction_version;
+
+  std::array<uint8_t, 16> send_amount_bytes = {};
+  base::span(send_amount_bytes)
+      .copy_from(base::byte_span_from_ref(transaction_state->send_amount));
+
+  auto signature_payload = generate_extrinsic_signature_payload(
+      **transaction_state->chain_metadata,
+      transaction_state->account_info->nonce, send_amount_bytes,
+      transaction_state->recipient,
+      transaction_state->runtime_version->spec_version,
+      transaction_state->runtime_version->transaction_version,
+      transaction_state->signing_header->block_number,
+      *transaction_state->genesis_hash, *transaction_state->signing_block_hash);
+
+  // keyring_service_.
+
+  LOG(INFO) << "and this is our signature payload: "
+            << base::HexEncodeLower(signature_payload);
+
+  std::move(transaction_state->callback)
+      .Run(false,
+           mojom::ProviderErrorUnion::NewPolkadotProviderError(
+               mojom::PolkadotProviderError::kInternalError),
+           WalletInternalErrorMessage());
 }
 
 }  // namespace brave_wallet

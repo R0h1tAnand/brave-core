@@ -25,6 +25,9 @@ class PolkadotTxMeta : public TxMeta {
   PolkadotTxMeta(const PolkadotTxMeta&) = delete;
   PolkadotTxMeta& operator=(const PolkadotTxMeta&) = delete;
 
+  uint128_t GetSendAmount() const;
+  std::string GetRecipient() const;
+
   // TxMeta
   base::Value::Dict ToValue() const override;
   mojom::TransactionInfoPtr ToTransactionInfo() const override;

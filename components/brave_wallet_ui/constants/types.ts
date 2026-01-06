@@ -661,6 +661,7 @@ export const emptyProviderErrorCodeUnion: BraveWallet.ProviderErrorUnion = {
   filecoinProviderError: undefined,
   solanaProviderError: undefined,
   cardanoProviderError: undefined,
+  polkadotProviderError: undefined,
 }
 
 export interface TransactionProviderErrorRegistry {

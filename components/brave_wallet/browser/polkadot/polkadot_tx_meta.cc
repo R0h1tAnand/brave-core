@@ -33,6 +33,14 @@ base::Value::Dict PolkadotTxMeta::ToValue() const {
   return dict;
 }
 
+uint128_t PolkadotTxMeta::GetSendAmount() const {
+  return amount_;
+}
+
+std::string PolkadotTxMeta::GetRecipient() const {
+  return recipient_;
+}
+
 // static
 bool PolkadotTxMeta::ValueToTxMeta(const base::Value::Dict& value,
                                    PolkadotTxMeta* tx_meta) {
