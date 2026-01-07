@@ -117,7 +117,7 @@ gfx::Insets GetLayoutInsets_ChromiumImpl(LayoutInset inset);
 
 #include <chrome/browser/ui/layout_constants.cc>
 #undef LayoutInset
-#undef LayoutConstant
+#undef BRAVE_LAYOUT_CONSTANTS_GET_LAYOUT_CONSTANT
 
 namespace tabs {
 
