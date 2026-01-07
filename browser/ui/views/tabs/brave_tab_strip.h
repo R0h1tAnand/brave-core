@@ -55,12 +55,6 @@ class BraveTabStrip : public TabStrip {
 
   TabContainer* GetTabContainerForTesting();
 
-  // TabStrip overrides:
-  bool ShouldDrawStrokes() const override;
-
-  // Exposed for testing.
-  static constexpr float kBraveMinimumContrastRatioForOutlines = 1.0816f;
-
   BooleanPrefMember always_hide_close_button_;
 
   base::WeakPtrFactory<BraveTabStrip> weak_factory_{this};
