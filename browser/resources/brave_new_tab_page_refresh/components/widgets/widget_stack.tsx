@@ -15,8 +15,8 @@ import { RewardsWidget } from './rewards_widget'
 import { TalkWidget } from './talk_widget'
 import { VpnWidget } from './vpn_widget'
 import { StatsWidget } from './stats_widget'
-import { NewsWidget } from './news_widget'
 
+import { NewsWidget } from './news_widget'
 import { style } from './widget_stack.style'
 
 type TabName = 'rewards' | 'talk' | 'vpn' | 'stats' | 'news'

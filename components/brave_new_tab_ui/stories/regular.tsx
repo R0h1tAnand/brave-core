@@ -1,4 +1,5 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/* Copyright (c) 2025 The Brave Authors. All rights reserved.
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
@@ -16,7 +17,6 @@ import { useNewTabData, getGridSitesData } from './default/data/storybookState'
 import { onChangeColoredBackground, onUseBraveBackground, onShowBrandedImageChanged } from './default/data/backgroundWallpaper'
 import getTodayState from './default/data/todayStorybookState'
 import getBraveVPNState from './default/data/braveVPNStorybookState'
-import getBraveNewsDisplayAd from './default/data/getBraveNewsDisplayAd'
 import { getDataUrl, getUnpaddedAsDataUrl } from '../../common/privateCDN'
 import { images, updateImages } from '../data/backgrounds'
 
@@ -80,7 +80,6 @@ export const Regular = () => {
       saveShowBraveTalk={doNothing}
       saveBrandedWallpaperOptIn={onShowBrandedImageChanged}
       saveSetAllStackWidgets={doNothing}
-      getBraveNewsDisplayAd={getBraveNewsDisplayAd}
       setBraveBackground={onUseBraveBackground}
       chooseNewCustomBackgroundImage={doNothing}
       setCustomImageBackground={doNothing}
