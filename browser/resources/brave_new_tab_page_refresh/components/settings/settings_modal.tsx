@@ -10,7 +10,6 @@ import Navigation from '@brave/leo/react/navigation'
 import NavigationItem from '@brave/leo/react/navigationItem'
 
 import { useBraveNews } from '../../../../../components/brave_news/browser/resources/shared/Context'
-
 import { useNewTabState } from '../../context/new_tab_context'
 import { useSearchState } from '../../context/search_context'
 import { BackgroundPanel } from './background_panel'

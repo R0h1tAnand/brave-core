@@ -6,7 +6,6 @@
 import * as React from 'react'
 
 import { useBraveNews } from '../../../../../components/brave_news/browser/resources/shared/Context'
-import { useNewTabState } from '../../context/new_tab_context'
 
 import { style } from './lazy_news_feed.style'
 
@@ -14,10 +13,8 @@ const NewsFeed = React.lazy(() => import('./news_feed'))
 
 export function LazyNewsFeed() {
   const braveNews = useBraveNews()
-  const newsFeatureEnabled = useNewTabState((s) => s.newsFeatureEnabled)
   const newsVisible = braveNews.isShowOnNTPPrefEnabled
-  const renderNews =
-    newsFeatureEnabled && (newsVisible || braveNews.customizePage)
+  const renderNews = newsVisible || braveNews.customizePage
 
   if (!renderNews) {
     return null
