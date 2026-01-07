@@ -1,12 +1,12 @@
 diff --git a/chrome/browser/browser_process_impl.h b/chrome/browser/browser_process_impl.h
-index d51701355e3bf1157c5123a20b4b01f52a73e95a..4595c9854be36ee6d4e7dec75ca9af0f6515b937 100644
+index d1424013aae8727766fbf745f3f0698129ce64d1..4f710d2d89591932eb8c3a6afce94140570a88a0 100644
 --- a/chrome/browser/browser_process_impl.h
 +++ b/chrome/browser/browser_process_impl.h
-@@ -243,6 +243,7 @@ class BrowserProcessImpl : public BrowserProcess,
+@@ -245,6 +245,7 @@ class BrowserProcessImpl : public BrowserProcess,
    GlobalFeatures* GetFeatures() override;
-
+ 
   private:
 +  friend class BraveBrowserProcessImpl;
    using WebRtcEventLogManager = webrtc_event_logging::WebRtcEventLogManager;
-
+ 
    // KeepAliveStateObserver implementation
