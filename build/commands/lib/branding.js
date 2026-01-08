@@ -198,6 +198,35 @@ exports.update = () => {
     path.join(braveAppVectorIconsDir, 'vector_icons', 'brave'),
     path.join(chromeComponentsDir, 'vector_icons', 'brave'),
   ])
+  // Replace history page's favicon.
+  fileMap.add([
+    path.join(
+      braveComponentsDir,
+      'resources',
+      'default_100_percent',
+      'favicon_history.png',
+    ),
+    path.join(
+      chromeComponentsDir,
+      'resources',
+      'default_100_percent',
+      'favicon_history.png',
+    ),
+  ])
+  fileMap.add([
+    path.join(
+      braveComponentsDir,
+      'resources',
+      'default_200_percent',
+      'favicon_history.png',
+    ),
+    path.join(
+      chromeComponentsDir,
+      'resources',
+      'default_200_percent',
+      'favicon_history.png',
+    ),
+  ])
   // Copy chrome-logo-faded.png for replacing chrome logo of welcome page with brave's on Win8.
   fileMap.add([
     path.join(braveBrowserResourcesDir, 'chrome-logo-faded.png'),
