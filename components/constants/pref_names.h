@@ -40,6 +40,20 @@ inline constexpr char kAskEnableWidvine[] = "brave.ask_widevine_install";
 inline constexpr char kShowBookmarksButton[] = "brave.show_bookmarks_button";
 inline constexpr char kShowSidePanelButton[] = "brave.show_side_panel_button";
 inline constexpr char kShowScreenshotButton[] = "brave.show_screenshot_button";
+// Integer pref holding a ScreenshotShortcutBehavior value. Controls what the
+// screenshot keyboard shortcut (Ctrl/Cmd+Shift+S) does. The app menu and the
+// toolbar button always show the screenshot options bubble.
+inline constexpr char kScreenshotShortcutBehavior[] =
+    "brave.screenshot.shortcut_behavior";
+// Values for kScreenshotShortcutBehavior. These are persisted to prefs and
+// used by the settings page, so existing values must not be renumbered.
+enum class ScreenshotShortcutBehavior {
+  kShowOptions = 0,
+  kSelectedArea = 1,
+  kVisibleArea = 2,
+  kFullPage = 3,
+  kMaxValue = kFullPage,
+};
 inline constexpr char kLocationBarIsWide[] = "brave.location_bar_is_wide";
 inline constexpr char kReferralDownloadID[] = "brave.referral.download_id";
 inline constexpr char kReferralTimestamp[] = "brave.referral.timestamp";

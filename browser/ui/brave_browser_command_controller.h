@@ -106,6 +106,9 @@ class BraveBrowserCommandController : public chrome::BrowserCommandController
   void UpdateCommandForBraveVPN();
   void UpdateCommandForPlaylist();
   void UpdateCommandForWaybackMachine();
+  // Runs IDC_SCREENSHOT_SHORTCUT: starts the capture mode chosen in
+  // brave.screenshot.shortcut_behavior, or shows the screenshot options bubble.
+  void ExecuteScreenshotShortcut();
   void UpdateCommandsForTabs();
   void UpdateCommandsForSend();
   // Enables IDC_BLOCK_ELEMENTS only when the active tab is an http(s) page,

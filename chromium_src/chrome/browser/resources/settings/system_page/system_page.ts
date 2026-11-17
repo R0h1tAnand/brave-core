@@ -3,8 +3,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import '../controls/settings_dropdown_menu.js'
+
 import { isMac } from '//resources/js/platform.js'
 
+import type { DropdownMenuOptionList } from '../controls/settings_dropdown_menu.js'
 import { loadTimeData } from '../i18n_setup.js'
 import { routes } from '../route.js'
 import { Router } from '../router.js'
@@ -21,8 +24,19 @@ declare module './system_page-chromium.js' {
     shortcutsSupported_: boolean
     isMac_: boolean
     warnBeforeQuittingLabel_: string
+    isBraveScreenshotEnabled_: boolean
+    screenshotShortcutBehaviorOptions_: DropdownMenuOptionList
     onShortcutsClick_(): void
   }
+}
+
+// Must match ScreenshotShortcutBehavior in
+// brave/components/constants/pref_names.h.
+enum ScreenshotShortcutBehavior {
+  SHOW_OPTIONS = 0,
+  SELECTED_AREA = 1,
+  VISIBLE_AREA = 2,
+  FULL_PAGE = 3,
 }
 
 // Upstream's HTMLElementTagNameMap entry for this tag points at the upstream
@@ -39,8 +53,36 @@ class SettingsSystemPageElement extends SettingsSystemPageElementChromium {
       shortcutsSupported_: { type: Boolean },
       isMac_: { type: Boolean },
       warnBeforeQuittingLabel_: { type: String },
+      isBraveScreenshotEnabled_: { type: Boolean },
+      screenshotShortcutBehaviorOptions_: { type: Array },
     }
   }
+
+  override accessor isBraveScreenshotEnabled_: boolean =
+      loadTimeData.getBoolean('isBraveScreenshotEnabled')
+
+  override accessor screenshotShortcutBehaviorOptions_:
+      DropdownMenuOptionList = [
+    {
+      value: ScreenshotShortcutBehavior.SHOW_OPTIONS,
+      name: loadTimeData.getString(
+          'braveScreenshotShortcutBehaviorShowOptions'),
+    },
+    {
+      value: ScreenshotShortcutBehavior.SELECTED_AREA,
+      name: loadTimeData.getString(
+          'braveScreenshotShortcutBehaviorSelectedArea'),
+    },
+    {
+      value: ScreenshotShortcutBehavior.VISIBLE_AREA,
+      name: loadTimeData.getString(
+          'braveScreenshotShortcutBehaviorVisibleArea'),
+    },
+    {
+      value: ScreenshotShortcutBehavior.FULL_PAGE,
+      name: loadTimeData.getString('braveScreenshotShortcutBehaviorFullPage'),
+    },
+  ]
 
   override accessor shortcutsSupported_: boolean =
       loadTimeData.getBoolean('areShortcutsSupported')

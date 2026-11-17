@@ -11,6 +11,7 @@
 #include "base/check_is_test.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/feature_list.h"
+#include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/metrics/user_metrics.h"
 #include "base/notreached.h"
@@ -20,6 +21,7 @@
 #include "brave/browser/ui/brave_pages.h"
 #include "brave/browser/ui/browser_commands.h"
 #include "brave/browser/ui/focus_mode/focus_mode_utils.h"
+#include "brave/browser/ui/screenshot/screenshot_controller.h"
 #include "brave/browser/ui/sidebar/sidebar_utils.h"
 #include "brave/browser/ui/tabs/brave_tab_strip_model.h"
 #include "brave/browser/ui/views/frame/brave_browser_view.h"
@@ -412,6 +414,11 @@ void BraveBrowserCommandController::InitBraveCommandState() {
   UpdateCommandEnabled(IDC_TOGGLE_SHIELDS, true);
   UpdateCommandEnabled(IDC_TOGGLE_JAVASCRIPT, true);
   UpdateCommandForBlockElements();
+  // Whether a screenshot can actually be taken is decided when the command
+  // runs, by deferring to IDC_SHARING_HUB_SCREENSHOT's enabled state.
+  UpdateCommandEnabled(
+      IDC_SCREENSHOT_SHORTCUT,
+      browser_->GetType() == BrowserWindowInterface::Type::TYPE_NORMAL);
 
   UpdateCommandEnabled(IDC_CLOSE_DUPLICATE_TABS,
                        brave::HasDuplicatesOfActiveTab(&*browser_));
@@ -572,6 +579,45 @@ void BraveBrowserCommandController::UpdateCommandForPlaylist() {
                 browser_->GetProfile()));
   }
 #endif
+}
+
+void BraveBrowserCommandController::ExecuteScreenshotShortcut() {
+  // Respect the same conditions that gate the app menu's Screenshot item.
+  if (!IsCommandEnabled(IDC_SHARING_HUB_SCREENSHOT)) {
+    return;
+  }
+
+  const auto behavior = static_cast<ScreenshotShortcutBehavior>(
+      browser_->GetProfile()->GetPrefs()->GetInteger(
+          kScreenshotShortcutBehavior));
+  auto* controller = screenshot::ScreenshotController::From(&*browser_);
+  auto* web_contents = browser_->tab_strip_model()->GetActiveWebContents();
+
+  // Show the options bubble, exactly as the app menu item does, when the user
+  // asked for it, or when a capture can't start right now (e.g. Brave's
+  // screenshot feature is disabled, or a capture is already in progress), so
+  // the shortcut still gives visible feedback.
+  if (behavior == ScreenshotShortcutBehavior::kShowOptions || !controller ||
+      !web_contents || !controller->CanCapture(web_contents).has_value()) {
+    ExecuteCommand(IDC_SHARING_HUB_SCREENSHOT);
+    return;
+  }
+
+  switch (behavior) {
+    case ScreenshotShortcutBehavior::kSelectedArea:
+      controller->CaptureSelectedArea(web_contents, base::DoNothing());
+      return;
+    case ScreenshotShortcutBehavior::kVisibleArea:
+      controller->CaptureVisibleArea(web_contents, base::DoNothing());
+      return;
+    case ScreenshotShortcutBehavior::kFullPage:
+      controller->CaptureFullPage(web_contents, base::DoNothing());
+      return;
+    case ScreenshotShortcutBehavior::kShowOptions:
+      break;
+  }
+  // Unknown pref value (e.g. edited by hand): fall back to the bubble.
+  ExecuteCommand(IDC_SHARING_HUB_SCREENSHOT);
 }
 
 void BraveBrowserCommandController::UpdateCommandForWaybackMachine() {
@@ -822,6 +868,9 @@ bool BraveBrowserCommandController::ExecuteBraveCommandWithDisposition(
       break;
     case IDC_BLOCK_ELEMENTS:
       brave::LaunchContentPicker(&*browser_);
+      break;
+    case IDC_SCREENSHOT_SHORTCUT:
+      ExecuteScreenshotShortcut();
       break;
     case IDC_SHOW_PLAYLIST_BUBBLE:
 #if BUILDFLAG(ENABLE_PLAYLIST_WEBUI)

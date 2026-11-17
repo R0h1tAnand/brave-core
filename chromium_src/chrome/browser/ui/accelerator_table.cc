@@ -14,9 +14,11 @@
 namespace {
 
 constexpr AcceleratorMapping kBraveAcceleratorMap[] = {
-    // Ctr+Shift+S (Cmd+Shift+S on Mac)
+    // Ctr+Shift+S (Cmd+Shift+S on Mac). Uses its own command so the shortcut
+    // can follow the user's chosen behavior, while the app menu and toolbar
+    // button (IDC_SHARING_HUB_SCREENSHOT) keep showing the options bubble.
     {ui::VKEY_S, ui::EF_PLATFORM_ACCELERATOR | ui::EF_SHIFT_DOWN,
-     IDC_SHARING_HUB_SCREENSHOT},
+     IDC_SCREENSHOT_SHORTCUT},
     {ui::VKEY_M, ui::EF_CONTROL_DOWN, IDC_TOGGLE_TAB_MUTE},
     // Ctrl+B(or Cmd+B)
     {ui::VKEY_B, ui::EF_PLATFORM_ACCELERATOR, IDC_TOGGLE_SIDEBAR},

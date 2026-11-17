@@ -12,9 +12,11 @@
 #include "base/functional/callback.h"
 #include "base/test/run_until.h"
 #include "base/test/scoped_feature_list.h"
+#include "brave/app/brave_command_ids.h"
 #include "brave/browser/infobars/brave_confirm_infobar_creator.h"
 #include "brave/browser/ui/bookmark/bookmark_helper.h"
 #include "brave/browser/ui/browser_commands.h"
+#include "brave/browser/ui/screenshot/screenshot_controller.h"
 #include "brave/browser/ui/sidebar/sidebar_service_factory.h"
 #include "brave/browser/ui/tabs/brave_tab_prefs.h"
 #include "brave/browser/ui/tabs/public/vertical_tab_controller.h"
@@ -384,8 +386,9 @@ IN_PROC_BROWSER_TEST_F(BraveBrowserViewTest, TopSeparatorWithPanelTest) {
                   ->GetVisible());
 }
 
-// Cmd/Ctrl+Shift+S (IDC_SHARING_HUB_SCREENSHOT) should open Brave's own
-// screenshot bubble instead of upstream's Sharing Hub one, and should
+// Cmd/Ctrl+Shift+S (IDC_SCREENSHOT_SHORTCUT, with the default "show screenshot
+// options" behavior) should open Brave's own screenshot bubble instead of
+// upstream's Sharing Hub one, and should
 // temporarily reveal the screenshot toolbar button when it's hidden by the
 // "show screenshot button" pref, hiding it again once the bubble closes.
 IN_PROC_BROWSER_TEST_F(BraveBrowserViewTest,
@@ -439,6 +442,64 @@ IN_PROC_BROWSER_TEST_F(BraveBrowserViewTest,
   // Close the bubble and confirm the button, still pref-controlled, stays
   // visible.
   EXPECT_TRUE(browser_view()->AcceleratorPressed(screenshot_accelerator));
+  EXPECT_TRUE(button->GetVisible());
+}
+
+// Cmd/Ctrl+Shift+S is bound to its own command, separate from the app menu's
+// Screenshot item.
+IN_PROC_BROWSER_TEST_F(BraveBrowserViewTest,
+                       ScreenshotAcceleratorUsesShortcutCommand) {
+  ui::Accelerator accelerator;
+  ASSERT_TRUE(
+      browser_view()->GetAccelerator(IDC_SCREENSHOT_SHORTCUT, &accelerator));
+  EXPECT_EQ(ui::Accelerator(ui::VKEY_S,
+                            ui::EF_PLATFORM_ACCELERATOR | ui::EF_SHIFT_DOWN),
+            accelerator);
+  EXPECT_FALSE(
+      browser_view()->GetAccelerator(IDC_SHARING_HUB_SCREENSHOT, &accelerator));
+}
+
+// When the user picks a capture mode for the shortcut in settings, the
+// shortcut starts that capture directly instead of showing the bubble.
+IN_PROC_BROWSER_TEST_F(BraveBrowserViewTest,
+                       ScreenshotShortcutSkipsBubbleWhenBehaviorIsSet) {
+  browser()->GetProfile()->GetPrefs()->SetInteger(
+      kScreenshotShortcutBehavior,
+      static_cast<int>(ScreenshotShortcutBehavior::kSelectedArea));
+
+  auto* button = screenshot_button();
+  ASSERT_TRUE(button);
+  ASSERT_FALSE(button->GetVisible());
+
+  auto* controller = screenshot::ScreenshotController::From(browser());
+  ASSERT_TRUE(controller);
+  auto* web_contents = browser()->tab_strip_model()->GetActiveWebContents();
+  ASSERT_TRUE(controller->CanCapture(web_contents).has_value());
+
+  EXPECT_TRUE(browser_view()->AcceleratorPressed(ui::Accelerator(
+      ui::VKEY_S, ui::EF_PLATFORM_ACCELERATOR | ui::EF_SHIFT_DOWN)));
+
+  // No bubble, so the hidden toolbar button isn't revealed...
+  EXPECT_FALSE(button->GetVisible());
+  // ...and the region-selection capture is now in progress.
+  EXPECT_EQ(screenshot::ScreenshotController::Error::kBusy,
+            controller->CanCapture(web_contents).error());
+}
+
+// The shortcut behavior setting only affects the keyboard shortcut. The app
+// menu's Screenshot item keeps showing the bubble so users can pick any mode.
+IN_PROC_BROWSER_TEST_F(BraveBrowserViewTest,
+                       ScreenshotMenuCommandIgnoresShortcutBehavior) {
+  browser()->GetProfile()->GetPrefs()->SetInteger(
+      kScreenshotShortcutBehavior,
+      static_cast<int>(ScreenshotShortcutBehavior::kFullPage));
+
+  auto* button = screenshot_button();
+  ASSERT_TRUE(button);
+  ASSERT_FALSE(button->GetVisible());
+
+  chrome::BrowserCommandController::From(browser())->ExecuteCommand(
+      IDC_SHARING_HUB_SCREENSHOT);
   EXPECT_TRUE(button->GetVisible());
 }
 

@@ -166,6 +166,12 @@
 // acceleratable so users can assign it a custom keyboard shortcut.
 #define IDC_BLOCK_ELEMENTS 56470
 
+// Bound to the screenshot keyboard shortcut (Ctrl/Cmd+Shift+S). Unlike
+// IDC_SHARING_HUB_SCREENSHOT, which the app menu and toolbar button use and
+// which always shows the screenshot options bubble, this command follows the
+// brave.screenshot.shortcut_behavior pref and can start a capture directly.
+#define IDC_SCREENSHOT_SHORTCUT 56471
+
 #define IDC_BRAVE_COMMANDS_LAST 57000
 
 #endif  // BRAVE_APP_BRAVE_COMMAND_IDS_H_
